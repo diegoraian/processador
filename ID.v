@@ -61,3 +61,58 @@ always @(negedge clock) begin
 end
 
 endmodule;
+
+
+/**
+	Controladode de memória de instruções
+**/
+      module ControladorDeMemoriaDeInstrucoes(opcode,funct, hazard, ULAOp,  IsImd, IsShift, Link, MemRead, MemWrite, PCSrc, RegWrite );
+          input  wire [5:0] opcode,
+          input  wire [5:0] funct,
+          input  wire       hazard,  
+        	output reg  [3:0] ULAOp,
+          output reg        IsImd,
+          output reg        IsShift,
+          output wire       Link,
+          output wire       MemRead,
+          output wire       MemWrite,
+          output reg  [1:0] PCSrc,
+          output reg        RegWrite
+        assign Link     = ~hazard & (opcode == `JPC);
+    		assign MemRead  = ~hazard & (opcode == `LW);
+    		assign MemWrite = ~hazard & (opcode == `SW);
+
+        always @(*) begin
+            if (hazard)
+                begin 
+                  ULAOp <= 0; 
+                  IsImd <= 0; 
+                  IsShift <= 0; 
+                  PCSrc <= 0; 
+                  RegWrite <= 0; 
+                end
+            else 
+              begin
+                case (opcode)
+                  6'b000000: case (funct)
+                      					`ADD:  begin ULAOp <= `ULA_ADD; IsImd <= 0; IsShift <= 0; PCSrc <= 0; RegWrite <= 1; end
+                      					`SUB:  begin ULAOp <= `ULA_SUB; IsImd <= 0; IsShift <= 0; PCSrc <= 0; RegWrite <= 1; end
+                      					`AND:  begin ULAOp <= `ULA_AND; IsImd <= 0; IsShift <= 0; PCSrc <= 0; RegWrite <= 1; end
+                      					`OR:   begin ULAOp <= `ULA_OR;  IsImd <= 0; IsShift <= 0; PCSrc <= 0; RegWrite <= 1; end
+                    						`SHR:  begin ULAOp <= `ULA_SHR; IsImd <= 0; IsShift <= 1; PCSrc <= 0; RegWrite <= 1; end
+                                `SHL;  begin ULAOp <= `ULA_SHL; IsImd <= 0; IsShift <= 1; PCSrc <= 0; RegWrite <= 1; end
+                    	   				default:  
+                                  		 begin ULAOp <= 0;        IsImd <= 0; IsShift <= 0; PCSrc <= 0; RegWrite <= 0; end
+                  					 endcase
+                  `JR:   begin ULAOp <= `ULA_JR;  IsImd <= 0; IsShift <= 0; PCSrc <= 2; RegWrite <= 0; end
+                  `JPC:  begin ULAOp <= `ULA_JPC; IsImd <= 0; IsShift <= 0; PCSrc <= 2; RegWrite <= 0; end
+                  `LW:   begin ULAOp <= `ULA_LW;  IsImd <= 1; IsShift <= 0; PCSrc <= 0; RegWrite <= 1; end
+                  `SW:   begin ULAOp <= `ULA_SW;  IsImd <= 1; IsShift <= 0; PCSrc <= 0; RegWrite <= 0; end
+                	default:   
+                    		 begin ULAOp <= 0;       IsImd <= 0; IsShift <= 0; PCSrc <= 0; RegWrite <= 0; end
+                endcase
+            end
+        end
+
+endmodule
+      
